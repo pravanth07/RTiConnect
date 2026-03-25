@@ -1,25 +1,10 @@
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-// In-memory OTP store
 const otpStore = new Map();
 
-const createTransporter = () => {
-  const port = parseInt(process.env.EMAIL_PORT) || 587;
-  return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: port,
-    secure: port === 465,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-};
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// @desc    Send OTP to email
-// @route   POST /api/auth/send-otp
-// @access  Public
 const sendOTP = async (req, res) => {
   try {
     const { email, type = 'register' } = req.body;
@@ -27,7 +12,7 @@ const sendOTP = async (req, res) => {
 
     const User = require('../models/User');
     const existing = await User.findOne({ email });
-    
+
     if (type === 'register' && existing) {
       return res.status(400).json({ success: false, message: 'Email already registered' });
     }
@@ -36,23 +21,14 @@ const sendOTP = async (req, res) => {
     }
 
     const otp = crypto.randomInt(100000, 999999).toString();
-
     otpStore.set(email, { otp, expiresAt: Date.now() + 5 * 60 * 1000, attempts: 0 });
 
-    // Cleanup expired
     for (const [key, val] of otpStore.entries()) {
       if (val.expiresAt < Date.now()) otpStore.delete(key);
     }
 
-    const emailUser = process.env.EMAIL_USER;
-    if (!emailUser || emailUser === 'your_email@gmail.com' || emailUser === 'sharathchandraprasad17@gmail.com') {
-      console.log(`[MOCK EMAIL] Generated OTP for ${email}: ${otp}`);
-      return res.status(200).json({ success: true, message: 'OTP generated (Check console)' });
-    }
-
-    const transporter = createTransporter();
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM || `"RTI Connect" <${process.env.EMAIL_USER}>`,
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'RTI Connect <onboarding@resend.dev>',
       to: email,
       subject: 'RTI Connect - Email Verification OTP',
       html: `
@@ -86,9 +62,6 @@ const sendOTP = async (req, res) => {
   }
 };
 
-// @desc    Verify OTP
-// @route   POST /api/auth/verify-otp
-// @access  Public
 const verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -111,4 +84,18 @@ const verifyOTP = async (req, res) => {
   }
 };
 
+const createTransporter = () => {
+  return { sendMail: async (opts) => await resend.emails.send({ from: opts.from, to: opts.to, subject: opts.subject, html: opts.html || opts.text }) };
+};
+
 module.exports = { sendOTP, verifyOTP, createTransporter, otpStore };
+```
+
+**Step 4:** Add to Render environment variables:
+```
+RESEND_API_KEY=re_your_api_key_here
+```
+
+**Step 5:** On Resend's free tier, you can only send from `onboarding@resend.dev` unless you verify a domain. So set:
+```
+EMAIL_FROM=RTI Connect <onboarding@resend.dev>
