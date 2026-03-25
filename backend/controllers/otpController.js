@@ -89,13 +89,3 @@ const createTransporter = () => {
 };
 
 module.exports = { sendOTP, verifyOTP, createTransporter, otpStore };
-```
-
-**Step 4:** Add to Render environment variables:
-```
-RESEND_API_KEY=re_JWQy8fna_AtXte1N6UZx82uUyjNsR3Nnn
-```
-
-**Step 5:** On Resend's free tier, you can only send from `onboarding@resend.dev` unless you verify a domain. So set:
-```
-EMAIL_FROM=RTI Connect <onboarding@resend.dev>
