@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
-const API = 'http://localhost:5000/api';
+const API = '/api';
 
 export default function Register() {
   const [step, setStep] = useState(1); // 1=form, 2=otp, 3=done
