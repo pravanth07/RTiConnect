@@ -24,7 +24,7 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+      const res = await axios.post('/api/auth/login', { email, password });
 
       if (res.data.success) {
         localStorage.setItem('rti_token', res.data.token);
@@ -44,7 +44,7 @@ export default function Login() {
     setForgotMessage('');
     setForgotLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/auth/send-otp', { email: forgotEmail, type: 'forgot' });
+      await axios.post('/api/auth/send-otp', { email: forgotEmail, type: 'forgot' });
       setForgotStep(2);
       setForgotMessage('OTP sent to your email.');
     } catch (err) {
@@ -59,7 +59,7 @@ export default function Login() {
     setForgotMessage('');
     setForgotLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/reset-password', {
+      const res = await axios.post('/api/auth/reset-password', {
         email: forgotEmail,
         otp: forgotOtp,
         newPassword
